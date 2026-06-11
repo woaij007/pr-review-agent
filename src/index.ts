@@ -1,17 +1,26 @@
-import Anthropic from "@anthropic-ai/sdk";
 import * as dotenv from "dotenv";
+import { getPRInfo, getPRFiles, getPRDiff, type PRFile } from "./github.js";
 
 dotenv.config();
 
-const client = new Anthropic();
-
 async function main() {
-const message = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 64,
-    messages: [{ role: "user", content: "Say: PR Review Agent ready." }],
-});
-console.log((message.content[0] as { text: string }).text);
+  // Test with a real public PR
+  const owner = "octocat";
+  const repo = "Hello-World";
+  const prNumber = 1;
+
+  console.log("Fetching PR info...");
+  const info = await getPRInfo(owner, repo, prNumber);
+  console.log("PR Info:", JSON.stringify(info, null, 2));
+
+  console.log("\nFetching PR files...");
+  const files = await getPRFiles(owner, repo, prNumber);
+  console.log(`Files changed: ${files.length}`);
+  files.forEach((f: PRFile) => console.log(`  ${f.status} ${f.filename}`));
+
+  console.log("\nFetching PR diff...");
+  const diff = await getPRDiff(owner, repo, prNumber);
+  console.log(diff || "(no diff available)");
 }
 
-main();
+main().catch(console.error);
