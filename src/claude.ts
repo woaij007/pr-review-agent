@@ -36,5 +36,6 @@ export async function reviewPR(prInfo: PRInfo, diff: string): Promise<Review> {
     throw new Error("No text response from Claude");
   }
 
-  return ReviewSchema.parse(JSON.parse(textBlock.text));
+  const raw = textBlock.text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  return ReviewSchema.parse(JSON.parse(raw));
 }
