@@ -5,6 +5,17 @@ import type { Review } from "./types.js";
 
 dotenv.config();
 
+function checkEnv(): void {
+  const missing = (["GITHUB_TOKEN", "ANTHROPIC_API_KEY"] as const).filter(
+    (k) => !process.env[k]
+  );
+  if (missing.length > 0) {
+    console.error(`Missing required environment variables: ${missing.join(", ")}`);
+    console.error("Copy .env.example to .env and fill in the values.");
+    process.exit(1);
+  }
+}
+
 function parsePRUrl(url: string): { owner: string; repo: string; prNumber: number } {
   const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
   if (!match) {
@@ -75,6 +86,8 @@ function formatReview(review: Review, prUrl: string): string {
 }
 
 async function main() {
+  checkEnv();
+
   const prUrl = process.argv[2];
   if (!prUrl) {
     console.error("Usage: tsx src/index.ts <GitHub PR URL>");
@@ -90,6 +103,11 @@ async function main() {
     getPRDiff(owner, repo, prNumber),
   ]);
 
+  if (!diff) {
+    console.error("Error: This PR has no reviewable diff (binary files or submodule changes only).");
+    process.exit(1);
+  }
+
   console.log(`PR: "${prInfo.title}" by @${prInfo.author}`);
   console.log(`Diff size: ${diff.length.toLocaleString()} chars`);
   console.log("Analyzing with Claude...\n");
@@ -99,6 +117,15 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("Error:", err instanceof Error ? err.message : err);
+  const msg = err instanceof Error ? err.message : String(err);
+  if (msg.includes("Not Found")) {
+    console.error("Error: PR not found. Check that the repository is public and the URL is correct.");
+  } else if (msg.includes("Bad credentials") || msg.includes("401")) {
+    console.error("Error: Invalid GitHub token. Check GITHUB_TOKEN in your .env file.");
+  } else if (msg.includes("rate limit") || msg.includes("403")) {
+    console.error("Error: GitHub API rate limit exceeded. Wait a few minutes and try again.");
+  } else {
+    console.error("Error:", msg);
+  }
   process.exit(1);
 });

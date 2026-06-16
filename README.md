@@ -3,6 +3,10 @@
 A CLI tool that analyzes GitHub Pull Requests using Claude AI and outputs a structured code review report.
 
 ```bash
+# using npm script
+npm start https://github.com/owner/repo/pull/123
+
+# or directly
 tsx src/index.ts https://github.com/owner/repo/pull/123
 ```
 
@@ -105,7 +109,7 @@ src/
 
 ## Status
 
-**In Progress** — Day 6/7 complete.
+**MVP Complete ✅**
 
 | Day | Task | Status |
 |-----|------|--------|
@@ -115,4 +119,4 @@ src/
 | 4 | Claude API integration | ✅ |
 | 5 | CLI entry point | ✅ |
 | 6 | Real-world testing + prompt tuning | ✅ |
-| 7 | Polish | 🔲 |
+| 7 | Polish (env validation, error messages) | ✅ |
